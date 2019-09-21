@@ -9,14 +9,24 @@ from bs4 import BeautifulSoup
 
 ARTIST_TITLE_PAT = re.compile(r"(?P<artist>.*) [-–—] (?P<title>.*)")
 ARTIST_PATS = [
-    re.compile(r"(?P<artist>.*)" + tail)
-    for tail in (r",.*", r"\sft.*", r"\sfeat.*", r"\sx\s.*", r"\s&.*")
+    re.compile(r"^(?P<artist>.*)" + tail)
+    for tail in (
+        r",.*",
+        r"\sft.*",
+        r"\sfeat.*",
+        r"\sx\s.*",
+        r"\s&.*",
+        r"\s\(f.*",
+    )
 ]
 TITLE_PATS = [
     re.compile(r"(.*) " + tail)
-    for tail in (r"\(?ft.*", r"\(?feat.*", r"\| .*", r"\(.*\)")
+    for tail in (r"\(?ft.*", r"\(?feat.*", r"\| .*", r"\(.*\)", r"\[.*\]")
 ]
-REMIX_PAT = re.compile(r"(.*) \((?P<remix>.*) remix\)")
+REMIX_PATS = [
+    re.compile(r"(.*) " + tail)
+    for tail in (r"\[(?P<remix>.*) remix\]", r"\((?P<remix>.*) remix\)")
+]
 
 
 def get_video_names(link: str):
@@ -28,6 +38,8 @@ def get_video_names(link: str):
 
 def split_artist_title(name):
     m = re.match(ARTIST_TITLE_PAT, name)
+    if m is None:
+        return None, None
     return m.group("artist"), m.group("title")
 
 
@@ -39,16 +51,22 @@ def cleanup_artist(text):
     else:
         m = next(filter(None, matches))
         n = m.group("artist")
-
+    if " x " in n:
+        return cleanup_artist(n)
     return n
 
 
 def cleanup_title(text):
     text = text.lower()
-    m = re.match(REMIX_PAT, text)
-    if m is not None:
+    remixes = {
+        p: re.match(p, text)
+        for p in REMIX_PATS
+        if re.match(p, text) is not None
+    }
+    if remixes:
+        pat, m = remixes.popitem()
         remix = m.group("remix")
-        text = re.sub(REMIX_PAT, r"\1", text)
+        text = re.sub(pat, r"\1", text)
     else:
         remix = ""
 
@@ -60,6 +78,8 @@ def cleanup_title(text):
 
 def title_to_search_terms(video_title):
     a, t = split_artist_title(video_title)
+    if not all((a, t)):
+        return None
     clean_a = cleanup_artist(a)
     clean_t = cleanup_title(t)
     return f"{clean_a} {clean_t}"
@@ -87,6 +107,7 @@ def main():
     with open("latest.json", "w") as f:
         json.dump(latest, f)
 
+    to_add = filter(None, to_add)
     songs = quote(";".join(to_add))
     url = f"shortcuts://run-shortcut?name=AMbatch&input={songs}"
     webbrowser.open(url)
