@@ -30,17 +30,13 @@ Requires *Pythonista* (paid) and *Shortcuts* apps.
 
 ## AMBatch shortcut
 
-- Get Text from Input
-- Split Text
-    - Separator: *Custom – “;”*
-- Repeat with Each
-    - Search iTunes Store
-        - Search: *Repeat Item* (found in “Variables”)
+- Text - Split `Shortcut Input` by `Custom` - `;`
+- Scripting - Repeat with each item in `Split text`
+    - iTunes Store - Search iTunes Store for `Repeat Item`
         - Category: *Music*
         - Search By: *All*
         - Results: *Songs*
         - Region: *%your region%*
         - *1 Item* (this is important)
-    - Add to Playlist
-        - Playlist: *%your playlist%*
+    - Music - Add `iTunes Products` to *%your playlist%*
 - End Repeat
