@@ -7,40 +7,40 @@ from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
 
-ARTIST_TITLE_PAT = re.compile(r"(?P<artist>.*) [-–—] (?P<title>.*)")
+ARTIST_TITLE_PAT = re.compile(r'(?P<artist>.*) [-–—] (?P<title>.*)')
 ARTIST_PATS = [
-    re.compile(r"^(?P<artist>.*)" + tail)
+    re.compile(r'^(?P<artist>.*)' + tail)
     for tail in (
-        r",.*",
-        r"\sft.*",
-        r"\sfeat.*",
-        r"\sx\s.*",
-        r"\s&.*",
-        r"\s\(f.*",
+        r',.*',
+        r'\sft.*',
+        r'\sfeat.*',
+        r'\sx\s.*',
+        r'\s&.*',
+        r'\s\(f.*',
     )
 ]
 TITLE_PATS = [
-    re.compile(r"(.*) " + tail)
-    for tail in (r"\(?ft.*", r"\(?feat.*", r"\| .*", r"\(.*\)", r"\[.*\]")
+    re.compile(r'(.*) ' + tail)
+    for tail in (r'\(?ft.*', r'\(?feat.*', r'\| .*', r'\(.*\)', r'\[.*\]')
 ]
 REMIX_PATS = [
-    re.compile(r"(.*) " + tail)
-    for tail in (r"\[(?P<remix>.*) remix\]", r"\((?P<remix>.*) remix\)")
+    re.compile(r'(.*) ' + tail)
+    for tail in (r'\[(?P<remix>.*) remix\]', r'\((?P<remix>.*) remix\)')
 ]
 
 
 def get_video_names(link: str):
     r = requests.get(link)
-    soup = BeautifulSoup(r.text, "html.parser")
-    for tg in soup.find_all("h3", class_="yt-lockup-title"):
-        yield tg.findChild("a").get("title")
+    soup = BeautifulSoup(r.text, 'html.parser')
+    for tg in soup.find_all('h3', class_='yt-lockup-title'):
+        yield tg.findChild('a').get('title')
 
 
 def split_artist_title(name):
     m = re.match(ARTIST_TITLE_PAT, name)
     if m is None:
         return None, None
-    return m.group("artist"), m.group("title")
+    return m.group('artist'), m.group('title')
 
 
 def cleanup_artist(text):
@@ -50,8 +50,8 @@ def cleanup_artist(text):
         n = text
     else:
         m = next(filter(None, matches))
-        n = m.group("artist")
-    if " x " in n:
+        n = m.group('artist')
+    if ' x ' in n:
         return cleanup_artist(n)
     return n
 
@@ -65,15 +65,15 @@ def cleanup_title(text):
     }
     if remixes:
         pat, m = remixes.popitem()
-        remix = m.group("remix")
-        text = re.sub(pat, r"\1", text)
+        remix = m.group('remix')
+        text = re.sub(pat, r'\1', text)
     else:
-        remix = ""
+        remix = ''
 
     for p in TITLE_PATS:
-        text = re.sub(p, r"\1", text)
+        text = re.sub(p, r'\1', text)
 
-    return f"{text} {remix}".strip()
+    return f'{text} {remix}'.strip()
 
 
 def title_to_search_terms(video_title):
@@ -82,36 +82,43 @@ def title_to_search_terms(video_title):
         return None
     clean_a = cleanup_artist(a)
     clean_t = cleanup_title(t)
-    return f"{clean_a} {clean_t}"
+    return f'{clean_a} {clean_t}'
 
 
 def main():
-    with open("channels.txt") as f:
-        channels = f.read().splitlines()
+    with open('sources.json') as f:
+        sources = json.load(f)
+
+    # Construct links for each source
+    links = {
+        name: f'https://www.youtube.com/{stype}/{id_}/videos'
+        for stype, sdict in sources.items()
+        for name, id_ in sdict.items()
+    }
+
     try:
-        with open("latest.json") as f:
+        with open('latest.json') as f:
             latest = json.load(f)
     except FileNotFoundError:
-        latest = {ch: "" for ch in channels}
+        latest = {name: '' for name in links}
 
     to_add = set()
-    for ch in channels:
-        link = f"https://www.youtube.com/user/{ch}/videos"
+    for name, link in links.items():
         video_names = list(
-            takewhile(lambda x: x != latest.get(ch), get_video_names(link))
+            takewhile(lambda x: x != latest.get(name), get_video_names(link))
         )
         if video_names:
-            latest[ch] = video_names[0]
+            latest[name] = video_names[0]
         to_add.update((title_to_search_terms(t) for t in video_names))
 
-    with open("latest.json", "w") as f:
+    with open('latest.json', 'w') as f:
         json.dump(latest, f)
 
     to_add = filter(None, to_add)
-    songs = quote(";".join(to_add))
-    url = f"shortcuts://run-shortcut?name=AMbatch&input={songs}"
+    songs = quote(';'.join(to_add))
+    url = f'shortcuts://run-shortcut?name=AMbatch&input={songs}'
     webbrowser.open(url)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -1,0 +1,5 @@
+[flake8]
+ignore = E402, E203
+max-line-length = 79
+exclude = venv
+max-complexity = 10

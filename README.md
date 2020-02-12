@@ -1,5 +1,7 @@
 # yt2am
 
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+
 **iOS only** script-shortcut combo to monitor music channels and create AM playlists.
 
 `requests` and `bs4` packages are provided by the Pythonista app (so no `requirements.txt`).
@@ -7,7 +9,7 @@
 ## Usage
 
 - Create AMbatch shortcut (see below; not shared here because reasons)
-- Modify `channels.txt` to include your channels
+- Modify `sources.json` to include your channels
     - No obvious way to create shortcut with `Run script` in the middle and not cause infinite loops; `run--shortcut` (with double hyphen) method fails
     - Not OK with passing script results over the clipboard
     - Hence, passing channels from the external file
@@ -21,12 +23,6 @@ Requires *Pythonista* (paid) and *Shortcuts* apps.
 - Remembers each channel's last video name from the previous search and searches newer videos
 - Tries to guess song remixes and searches accordingly
 - Simplifies search by removing additional artists (from “feat.” etc) both from artist name and from song title
-- “Pre-installed” channels (EDM):
-    - [xKito](https://www.youtube.com/user/nyuualiaslucy/)
-    - [Diversity](https://www.youtube.com/user/DiavelNN)
-    - [Kyra](https://www.youtube.com/user/NNKyra)
-    - [Trap City](https://www.youtube.com/user/OfficialTrapCity)
-    - [Tribal Trap](https://www.youtube.com/user/TribalTrapMusic)
 
 ## AMBatch shortcut
 
