@@ -27,6 +27,7 @@ EMOJIS = re.compile(
     ']+',
     flags=re.UNICODE,
 )
+EXTRA_SPACE = re.compile(r'\s{2,}')
 
 ARTIST_TITLE_PAT = re.compile(r'(?P<artist>.*) [-–—] (?P<title>.*)')
 ARTIST_PATS = [
@@ -42,7 +43,14 @@ ARTIST_PATS = [
 ]
 TITLE_PATS = [
     re.compile(r'(.*) ' + tail)
-    for tail in (r'\(?ft.*', r'\(?feat.*', r'\| .*', r'\(.*\)', r'\[.*\]')
+    for tail in (
+        r'\(?ft.*',
+        r'\(?feat.*',
+        r'\| .*',
+        r'\(.*\)',
+        r'\[.*\]',
+        r'\(with.*\)',
+    )
 ]
 REMIX_PATS = [
     re.compile(r'(.*) ' + tail)
@@ -66,16 +74,12 @@ def split_artist_title(name):
 
 def cleanup_artist(text):
     text = text.lower()
-    matches = [re.match(p, text) for p in ARTIST_PATS]
-    if not any(matches):
-        n = text
-    else:
-        m = next(filter(None, matches))
-        n = m.group('artist')
-    if ' x ' in n:
-        return cleanup_artist(n)
-    n = n.replace('/', ' ').replace(',', '')
-    return n
+    to_replace = (' x ', ', ', 'ft.', 'feat.', ' & ', '(', ')', '/')
+    for r in to_replace:
+        text = text.replace(r, ' ')
+    text = EXTRA_SPACE.sub(r' ', text)
+    text = EMOJIS.sub(r'', text)
+    return text.strip()
 
 
 def cleanup_title(text):
@@ -95,9 +99,18 @@ def cleanup_title(text):
     for p in TITLE_PATS:
         text = re.sub(p, r'\1', text)
 
-    text = text.replace('/', ' ').replace(',', '')
-    remix = remix.replace('/', ' ').replace(',', '')
-    return f'{text} {remix}'.strip()
+    text = EMOJIS.sub(r'', text)
+    remix = EMOJIS.sub(r'', remix)
+
+    to_replace = ('/', ', ', ' & ')
+    for r in to_replace:
+        text = text.replace(r, ' ')
+        remix = remix.replace(r, ' ')
+
+    text = EXTRA_SPACE.sub(r' ', text)
+    remix = EXTRA_SPACE.sub(r' ', remix)
+
+    return f'{text.strip()} {remix.strip()}'.strip()
 
 
 def title_to_search_terms(video_title):
