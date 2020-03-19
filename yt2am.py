@@ -151,7 +151,6 @@ def main():
     with open('latest.json', 'w') as f:
         json.dump(latest, f)
 
-    to_add = (EMOJIS.sub(r'', item).strip() for item in filter(None, to_add))
     songs = quote(';'.join(to_add))
     url = f'shortcuts://run-shortcut?name=AMbatch&input={songs}'
     webbrowser.open(url)
