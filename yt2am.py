@@ -74,6 +74,7 @@ def cleanup_artist(text):
         n = m.group('artist')
     if ' x ' in n:
         return cleanup_artist(n)
+    n = n.replace('/', ' ').replace(',', '')
     return n
 
 
@@ -94,6 +95,8 @@ def cleanup_title(text):
     for p in TITLE_PATS:
         text = re.sub(p, r'\1', text)
 
+    text = text.replace('/', ' ').replace(',', '')
+    remix = remix.replace('/', ' ').replace(',', '')
     return f'{text} {remix}'.strip()
 
 
