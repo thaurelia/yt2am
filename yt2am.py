@@ -57,9 +57,21 @@ REMIX_PATS = [
     for tail in (r'\[(?P<remix>.*) remix\]', r'\((?P<remix>.*) remix\)')
 ]
 
+HEADERS = {
+    'Accept': 'text/html',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'Connection': 'close',
+    'Upgrade-Insecure-Requests': '1',
+}
+
+
+def remove_wildcards(text: str):
+    return ' '.join(filter(lambda x: '*' not in x, text.split(' ')))
+
 
 def get_video_names(link: str):
-    r = requests.get(link)
+    r = requests.get(link, headers=HEADERS)
     soup = BeautifulSoup(r.text, 'html.parser')
     for tg in soup.find_all('h3', class_='yt-lockup-title'):
         yield tg.findChild('a').get('title')
@@ -79,7 +91,7 @@ def cleanup_artist(text):
         text = text.replace(r, ' ')
     text = EXTRA_SPACE.sub(r' ', text)
     text = EMOJIS.sub(r'', text)
-    return text.strip()
+    return remove_wildcards(text).strip()
 
 
 def cleanup_title(text):
@@ -109,6 +121,8 @@ def cleanup_title(text):
 
     text = EXTRA_SPACE.sub(r' ', text)
     remix = EXTRA_SPACE.sub(r' ', remix)
+    text = remove_wildcards(text)
+    remix = remove_wildcards(remix)
 
     return f'{text.strip()} {remix.strip()}'.strip()
 
@@ -151,7 +165,8 @@ def main():
     with open('latest.json', 'w') as f:
         json.dump(latest, f)
 
-    songs = quote(';'.join(to_add))
+    # Last filter to discard None-s that come from songs not having an artist
+    songs = quote(';'.join(filter(None.__ne__, to_add)))
     url = f'shortcuts://run-shortcut?name=AMbatch&input={songs}'
     webbrowser.open(url)
 
